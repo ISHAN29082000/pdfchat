@@ -1,32 +1,31 @@
-from fastapi import FastAPI, UploadFile
-import fitz  # PyMuPDF for PDF processing
+from fastapi import FastAPI, File, UploadFile
+import shutil
+import logging
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
 
 app = FastAPI()
 
-pdf_text = ""  # Store extracted PDF text
+@app.on_event("startup")
+async def startup_event():
+    logging.info("🚀 Server has started successfully!")
 
 @app.post("/upload/")
-async def upload_pdf(file: UploadFile):
-    global pdf_text
-    content = await file.read()
+async def upload_pdf(file: UploadFile = File(...)):
+    try:
+        file_location = f"uploaded_{file.filename}"
+        with open(file_location, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
 
-    # Save file temporarily
-    with open("temp.pdf", "wb") as f:
-        f.write(content)
+        logging.info(f"✅ File '{file.filename}' uploaded successfully!")
+        return {"filename": file.filename, "status": "uploaded", "location": file_location}
 
-    # Extract text from PDF
-    doc = fitz.open("temp.pdf")
-    pdf_text = "\n".join([page.get_text("text") for page in doc])
+    except Exception as e:
+        logging.error(f"❌ Error uploading file: {str(e)}")
+        return {"error": "File upload failed"}
 
-    return {"message": "PDF Uploaded Successfully!"}
-
-@app.get("/chat/")
-async def chat(query: str):
-    if not pdf_text:
-        return {"response": "Please upload a PDF first."}
-
-    # Simple text search
-    matched_lines = [line for line in pdf_text.split("\n") if query.lower() in line.lower()]
-    response = "\n".join(matched_lines[:5]) if matched_lines else "No relevant answer found."
-
-    return {"response": response}
+# Root endpoint to check if API is running
+@app.get("/")
+async def root():
+    return {"message": "API is running successfully!"}
