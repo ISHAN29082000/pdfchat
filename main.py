@@ -1,10 +1,9 @@
-from fastapi import FastAPI, UploadFile, Form
-import fitz  # PyMuPDF for extracting text
-import os
+from fastapi import FastAPI, UploadFile
+import fitz  # PyMuPDF for PDF processing
 
 app = FastAPI()
 
-pdf_text = ""  # Store extracted text
+pdf_text = ""  # Store extracted PDF text
 
 @app.post("/upload/")
 async def upload_pdf(file: UploadFile):
