@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with Assistant</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #1e3c72, #2a5298);
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        #container {
+            width: 90%;
+            max-width: 600px;
+            margin: auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        #chatbox {
+            height: 300px;
+            overflow-y: scroll;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 10px;
+            text-align: left;
+        }
+        .message {
+            padding: 10px;
+            margin: 5px;
+            border-radius: 10px;
+            max-width: 80%;
+            word-wrap: break-word;
+            display: inline-block;
+            animation: fadeIn 0.5s;
+        }
+        .user-message {
+            background: #4CAF50;
+            color: white;
+            text-align: right;
+            float: right;
+            clear: both;
+        }
+        .bot-message {
+            background: #1e3c72;
+            color: white;
+            text-align: left;
+            float: left;
+            clear: both;
+        }
+        input, button {
+            padding: 10px;
+            width: 90%;
+            margin-top: 10px;
+            border: none;
+            border-radius: 5px;
+        }
+        input {
+            background: #fff;
+            color: #333;
+        }
+        button {
+            background: #ff9800;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #e68900;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h2>Chat with Assistant</h2>
+
+        <!-- File Upload Section (Only for User ID: ishanchats) -->
+        <div id="uploadSection" style="display: none;">
+            <input type="file" id="pdfUpload">
+            <button onclick="uploadPDF()">Upload</button>
+        </div>
+
+        <h3>Chat Box</h3>
+        <div id="chatbox"></div>
+
+        <input type="text" id="queryInput" placeholder="Ask something...">
+        <button onclick="sendQuery()">Ask</button>
+    </div>
+
+    <script>
+        // Check User ID (Prompt for now, replace with actual login check)
+        let userID = prompt("Enter your User ID:");
+        if (userID === "ishanchats") {
+            document.getElementById("uploadSection").style.display = "block";
+        }
+
+        async function uploadPDF() {
+            let fileInput = document.getElementById('pdfUpload');
+            let file = fileInput.files[0];
+            let formData = new FormData();
+            formData.append("file", file);
+
+            let response = await fetch("http://127.0.0.1:8000/upload/", {
+                method: "POST",
+                body: formData
+            });
+            let result = await response.json();
+            alert(result.message);
+        }
+
+        async function sendQuery() {
+            let query = document.getElementById("queryInput").value;
+            let chatbox = document.getElementById("chatbox");
+
+            if (query.trim() === "") return;
+
+            // Add User Message
+            let userMessage = document.createElement("div");
+            userMessage.className = "message user-message";
+            userMessage.innerText = query;
+            chatbox.appendChild(userMessage);
+            chatbox.scrollTop = chatbox.scrollHeight;
+
+            // Fetch Answer
+            let response = await fetch(`http://127.0.0.1:8000/chat/?query=${query}`);
+            let data = await response.json();
+
+            // Add Bot Message after a delay (for natural conversation effect)
+            setTimeout(() => {
+                let botMessage = document.createElement("div");
+                botMessage.className = "message bot-message";
+                botMessage.innerText = "Hmm... let me check.\n\n" + data.response;
+                chatbox.appendChild(botMessage);
+                chatbox.scrollTop = chatbox.scrollHeight;
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
